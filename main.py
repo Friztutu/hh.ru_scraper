@@ -1,8 +1,6 @@
+from time import sleep
 import requests
 from bs4 import BeautifulSoup
-import lxml
-from time import sleep
-
 
 HEADERS = {
     "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -39,19 +37,19 @@ def card_information(url):
     return vacancy_url, vacancy_name, salary, expecience, time_for_job, town, data
 
 
-def get_information(vacancy_url, vacancy_name, salary, expecience, time_for_job, town, data):
+def get_information(vacancy_url, vacancy_name, salary, experience, time_for_job, town, data):
     result = f'Сслыка на вакансию: {vacancy_url}\n' \
              f'Название вакансии: {vacancy_name}\n' \
              f'Зарплата: {salary}\n' \
-             f'Требуемый опыт работы: {expecience}\n' \
+             f'Требуемый опыт работы: {experience}\n' \
              f'Занятость: {time_for_job}\n' \
              f'Город: {town}\n' \
              f'Дата: {data}\n'
     return result
 
 
-def parse_paige(page, job):
-    URL = f'https://hh.ru/search/vacancy?text={job}&page={page}'
+def parse_paige(job, paige=0):
+    URL = f'https://hh.ru/search/vacancy?text={job}&page={paige}'
     soup = get_request(URL)
     for link in card_urls(soup):
         vacancy_information = card_information(link)
@@ -66,5 +64,5 @@ def parse_paige(page, job):
 search_job = input("Enter the job title you want to search for: ")
 
 for page in range(40):
-    parse_paige(page, search_job)
+    parse_paige(search_job, page)
     sleep(1)
