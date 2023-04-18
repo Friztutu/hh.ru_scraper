@@ -17,12 +17,12 @@ def get_request(url):
     return BeautifulSoup(response.text, 'lxml')
 
 
-def vacancy_urls(soup):
+def card_urls(soup):
     for link in soup.find_all('a', class_='serp-item__title'):
         yield link.get('href')
 
 
-def parse_information(url):
+def card_information(url):
     soup = get_request(url)
     vacancy_url = url
 
@@ -53,8 +53,8 @@ def get_information(vacancy_url, vacancy_name, salary, expecience, time_for_job,
 def parse_paige(page, job):
     URL = f'https://hh.ru/search/vacancy?text={job}&page={page}'
     soup = get_request(URL)
-    for link in vacancy_urls(soup):
-        vacancy_information = parse_information(link)
+    for link in card_urls(soup):
+        vacancy_information = card_information(link)
 
         if isinstance(vacancy_information, str):
             print(vacancy_information + '\n')
