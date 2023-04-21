@@ -15,7 +15,23 @@ Job parser for hh.ru . Writes all vacancies to the database (postgresql) on requ
 
 ## Documentation
 
-Documentation Here
+--CLASS HeadHunterParser
+       
+       class for parsing information from all job cards on the page
+       
+       methods:
+       
+      __init__ - sends hh.ru get request, create main page soup
+      
+      __card_soup_generator - generator with links to job cards -> yield str (card link)
+      
+      __convert_salary - removes extra characters, puts an icon in the currency in which the salary is indicated -> return str ('salary<valute icon>')
+      
+      __convert_data - removes extra characters,  -> return str ('year month day)
+      
+      __convert_experience - removes extra characters, return int (required work experience)
+      
+      __iter__ - generator with information from the vacancy card -> yeild tuple ( vacancy link, vacancy name, salary, data, town, required work experience, employment)
 
 
 ## Developers
