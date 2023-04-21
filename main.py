@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from time import sleep
 import database
 from peewee import IntegrityError
+from progress.bar import IncrementalBar
 
 
 class HeadHunterParser:
@@ -75,7 +76,7 @@ class HeadHunterParser:
     @staticmethod
     def __convert_experience(experience):
         if experience == 'Требуемый опыт работы: не требуется':
-            return None
+            return 0
 
         for letter in experience:
             if not letter.isdigit():
@@ -106,18 +107,27 @@ class HeadHunterParser:
 
 
 if __name__ == '__main__':
-    search_job = input("Enter the job title you want to search for: ")
-    database.init_db()
+    search_job = input("Enter the job title you want to search for: ").strip()
+    database.init_db(search_job)
+    bar = IncrementalBar('Progress', max=40)
 
     for page in range(40):
-        el = HeadHunterParser(search_job, page=page)
-        for info in el:
-            print(*info, sep='\n')
+
+        try:
+            parser = HeadHunterParser(search_job, page=page)
+        except ValueError as error:
+            print(error)
+            continue
+
+        for info in parser:
+
             try:
                 database.insert_into_table(*info)
+                sleep(2)
             except IntegrityError as error:
                 print(error)
 
-        sleep(2)
+        bar.next()
 
     database.close_db()
+    bar.finish()
