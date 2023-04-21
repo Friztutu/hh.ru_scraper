@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from time import sleep
-import database
+from database import Vacancy
 from peewee import IntegrityError
 from tqdm import tqdm
 
@@ -108,7 +108,7 @@ class HeadHunterParser:
 
 if __name__ == '__main__':
     search_job = input("Enter the job title you want to search for: ").strip()
-    database.init_db(search_job)
+    Vacancy.init_db(search_job)
 
     for page in tqdm(range(40)):
 
@@ -121,10 +121,10 @@ if __name__ == '__main__':
         for info in parser:
 
             try:
-                database.insert_into_table(*info)
+                Vacancy.insert_into_table(*info)
             except IntegrityError as error:
                 print(error)
 
         sleep(2)
 
-    database.close_db()
+    Vacancy.close_db()

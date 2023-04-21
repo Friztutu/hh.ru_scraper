@@ -27,38 +27,38 @@ class Vacancy(BaseModel):
     class Meta:
         table_name = 'PythonVacancies'
 
+    @classmethod
+    def init_db(cls, job_name):
+        cls._meta.table_name = job_name
+        db.connect()
+        db.create_tables([Vacancy])
 
-def init_db(job_name):
-    Vacancy._meta.table_name = job_name
-    db.connect()
-    db.create_tables([Vacancy])
+    @classmethod
+    def insert_into_table(cls, link, name, salary, data, town, experience, employment):
+        obj = cls.create(
+            vacancy_link=link,
+            vacancy_name=name,
+            salary=salary,
+            date=psycopg2.Date(*map(int, data.split())),
+            town=town,
+            experience=experience,
+            employment=employment
+        )
 
+        obj.save()
 
-def insert_into_table(link, name, salary, data, town, experience, employment):
-    obj = Vacancy.create(
-        vacancy_link=link,
-        vacancy_name=name,
-        salary=salary,
-        date=psycopg2.Date(*map(int, data.split())),
-        town=town,
-        experience=experience,
-        employment=employment
-    )
+    @staticmethod
+    def close_db():
+        db.close()
 
-    obj.save()
-
-
-def close_db():
-    db.close()
-
-
-def show_db(job_name):
-    Vacancy._meta.table_name = job_name
-    query = Vacancy.select()
-    for elem in query.dicts().execute():
-        print(elem)
+    @classmethod
+    def show_db(cls, job_name):
+        cls._meta.table_name = job_name
+        query = Vacancy.select()
+        for elem in query.dicts().execute():
+            print(elem)
 
 
 if __name__ == '__main__':
     job_name_db = input('Enter the job title you want to search for: ')
-    show_db(job_name_db)
+    Vacancy.show_db(job_name_db)
