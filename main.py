@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from time import sleep
 import database
 from peewee import IntegrityError
-from progress.bar import IncrementalBar
+from tqdm import tqdm
 
 
 class HeadHunterParser:
@@ -109,9 +109,8 @@ class HeadHunterParser:
 if __name__ == '__main__':
     search_job = input("Enter the job title you want to search for: ").strip()
     database.init_db(search_job)
-    bar = IncrementalBar('Progress', max=40)
 
-    for page in range(40):
+    for page in tqdm(range(40)):
 
         try:
             parser = HeadHunterParser(search_job, page=page)
@@ -123,11 +122,9 @@ if __name__ == '__main__':
 
             try:
                 database.insert_into_table(*info)
-                sleep(2)
             except IntegrityError as error:
                 print(error)
 
-        bar.next()
+        sleep(2)
 
     database.close_db()
-    bar.finish()
