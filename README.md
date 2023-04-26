@@ -48,6 +48,13 @@ __iter__ - generator with information from the vacancy card -> yeild tuple ( vac
 
 - [Alex](https://github.com/Friztutu)
 
+## Time for work
+
+≈ 40 sec for parse one paige <br/>
+≈ 12 minutes for parse all pages
+
 ## License
 
 Project JobParser is distributed under the MIT licence
+
+
