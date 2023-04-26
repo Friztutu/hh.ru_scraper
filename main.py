@@ -4,6 +4,7 @@ from time import sleep
 from database import Vacancy
 from peewee import IntegrityError
 from tqdm import tqdm
+from datetime import datetime
 
 
 class HeadHunterParser:
@@ -45,12 +46,10 @@ class HeadHunterParser:
 
         result = ''.join(result)
 
-        for currency in currencies:
-            if currency in salary:
-                result += currencies[currency]
-                break
+        if 'руб.' not in salary:
+            return None
 
-        return result
+        return int(result)
 
     @staticmethod
     def __convert_data(data):
@@ -106,12 +105,12 @@ class HeadHunterParser:
                 print(f'Не удалось получить информацию о вакансии: {link}')
 
 
-if __name__ == '__main__':
+def main():
     search_job = input("Enter the job title you want to search for: ").strip()
     Vacancy.init_db(search_job)
 
     for page in tqdm(range(40)):
-
+        vacancy_count = 0
         try:
             parser = HeadHunterParser(search_job, page=page)
         except ValueError as error:
@@ -119,12 +118,17 @@ if __name__ == '__main__':
             continue
 
         for info in parser:
-
             try:
-                Vacancy.insert_into_table(*info)
+                Vacancy.insert_into_table(*info, datetime.now().date())
+                vacancy_count += 1
             except IntegrityError as error:
                 print(error)
 
+        print(f"|| Страница: {page} || Вакансий: {vacancy_count}")
         sleep(2)
 
     Vacancy.close_db()
+
+
+if __name__ == '__main__':
+    main()

@@ -18,11 +18,12 @@ class Vacancy(BaseModel):
     vacancy_id = AutoField(column_name='vacancy_id', primary_key=True)
     vacancy_link = TextField(column_name='vacancy_link', unique=True)
     vacancy_name = TextField(column_name='vacancy_name')
-    salary = CharField(column_name='salary', null=True)
+    salary = IntegerField(column_name='salary', null=True)
     date = DateField(column_name='date')
     town = CharField(column_name='town', max_length=70)
     experience = SmallIntegerField(column_name='experience', null=True)
     employment = CharField(column_name='employment', max_length=50, null=True)
+    parse_date = DateField(column_name='parse_date')
 
     class Meta:
         table_name = 'PythonVacancies'
@@ -31,10 +32,12 @@ class Vacancy(BaseModel):
     def init_db(cls, job_name):
         cls._meta.table_name = job_name
         db.connect()
+        if db.table_exists(job_name):
+            db.drop_tables(Vacancy)
         db.create_tables([Vacancy])
 
     @classmethod
-    def insert_into_table(cls, link, name, salary, data, town, experience, employment):
+    def insert_into_table(cls, link, name, salary, data, town, experience, employment, parse_date):
         obj = cls.create(
             vacancy_link=link,
             vacancy_name=name,
@@ -42,7 +45,8 @@ class Vacancy(BaseModel):
             date=psycopg2.Date(*map(int, data.split())),
             town=town,
             experience=experience,
-            employment=employment
+            employment=employment,
+            parse_date=parse_date,
         )
 
         obj.save()
