@@ -1,12 +1,12 @@
 import scrapy
-
-
-#search_job = input("Какую работу ищем: ")
+import re
+import unidecode
 
 
 class CardUrlSpider(scrapy.Spider):
     name = 'hh'
-    start_urls = [f'https://pskov.hh.ru/search/vacancy?area=113&text=python&items_on_page=20']
+    search_job = input("Какую работу ищем: ")
+    start_urls = [f'https://pskov.hh.ru/search/vacancy?area=113&text={search_job}&items_on_page=20']
     download_delay = 1
     counter = 0
     PAGE_ON_SITE = 100
@@ -20,36 +20,18 @@ class CardUrlSpider(scrapy.Spider):
 
         for page in range(self.PAGE_ON_SITE):
             yield response.follow(
-                f'https://pskov.hh.ru/search/vacancy?area=113&text=python&items_on_page=20&page={page}',
+                f'https://pskov.hh.ru/search/vacancy?area=113&text={self.search_job}&items_on_page=20&page={page}',
                 callback=self.parse
             )
 
     def parse_vacancy_card(self, response):
-        yield {
+        data = {
             'link': response.url,
             'title': response.css('h1.bloko-header-section-1::text').get(),
-            'experience':response.xpath("/html[@class='desktop']/body[@class=' s-friendly xs-friendly']/div["
-                                        "@id='HH-React-Root']/div/div[@class='HH-MainContent "
-                                        "HH-Supernova-MainContent']/div[@class='main-content']/div["
-                                        "@class='bloko-columns-wrapper']/div[@class='row-content']/div["
-                                        "@class='bloko-text bloko-text_large']/div[@class='bloko-columns-row']/div["
-                                        "@class='bloko-column bloko-column_container bloko-column_xs-4 "
-                                        "bloko-column_s-8 bloko-column_m-12 bloko-column_l-10']/div["
-                                        "@class='bloko-columns-row'][1]/div[@class='bloko-column bloko-column_xs-4 "
-                                        "bloko-column_s-8 bloko-column_m-12 bloko-column_l-10']/div["
-                                        "@class='wrapper-flat--H4DVL_qLjKLCo1sytcNI']/p["
-                                        "@class='vacancy-description-list-item'][1]").extract()[0].replace('<p class="vacancy-description-list-item">Требуемый опыт работы<!-- -->: <span data-qa="vacancy-experience">', '').replace('</span></p>', ''),
-            'salary': self.covert_salary(response.xpath("/html[@class='desktop']/body[@class=' s-friendly xs-friendly']/div["
-                                     "@id='HH-React-Root']/div/div[@class='HH-MainContent "
-                                     "HH-Supernova-MainContent']/div[@class='main-content']/div["
-                                     "@class='bloko-columns-wrapper']/div[@class='row-content']/div["
-                                     "@class='bloko-text bloko-text_large']/div[@class='bloko-columns-row']/div["
-                                     "@class='bloko-column bloko-column_container bloko-column_xs-4 bloko-column_s-8 "
-                                     "bloko-column_m-12 bloko-column_l-10']/div[@class='bloko-columns-row'][1]/div["
-                                     "@class='bloko-column bloko-column_xs-4 bloko-column_s-8 bloko-column_m-12 "
-                                     "bloko-column_l-10']/div[@class='wrapper-flat--H4DVL_qLjKLCo1sytcNI']/div["
-                                     "@class='vacancy-title']/div[2]/span[@class='bloko-header-section-2 "
-                                     "bloko-header-section-2_lite']").extract()),
+            'experience': self.__convert_experience(
+                response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('p').css('span::text').get()),
+            'salary': self.__convert_salary(
+                response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('div.vacancy-title').get()),
             'employment': response.xpath("/html[@class='desktop']/body[@class=' s-friendly xs-friendly']"
                                          "/div[@id='HH-React-Root']/div/div[@class='HH-MainContent HH-Su"
                                          "pernova-MainContent']/div[@class='main-content']/div[@class='bl"
@@ -60,32 +42,42 @@ class CardUrlSpider(scrapy.Spider):
                                          "'bloko-columns-row'][1]/div[@class='bloko-column bloko-column_xs-"
                                          "4 bloko-column_s-8 bloko-column_m-12 bloko-column_l-10']/div[@class="
                                          "'wrapper-flat--H4DVL_qLjKLCo1sytcNI']/p[@class='vacancy-description"
-                                         "-list-item'][2]").extract()[0].replace('<p class="vacancy-description-list-item" data-qa="vacancy-view-employment-mode">', '').replace('<!-- -->, <span>', ', ').replace('</span></p>', ''),
+                                         "-list-item'][2]").extract()[0].replace(
+                '<p class="vacancy-description-list-item" data-qa="vacancy-view-employment-mode">', '').replace(
+                '<!-- -->, <span>', ', ').replace('</span></p>', ''),
             'town': response.css('div.vacancy-company-redesigned').css('p::text').get(),
         }
+        if not data['town']:
+            data['town'] = response.css('div.vacancy-company-redesigned').css('a.bloko-link_disable-visited').css(
+                'span::text').get()
+        yield data
 
-    def covert_salary(self, salary_html_code):
-        salary_html_code = salary_html_code[0]
+    @staticmethod
+    def __convert_salary(salary_html_code: str):
 
         if 'з/п не указана' in salary_html_code:
             return None
 
-        salary_html_code = salary_html_code.replace('<span data-qa="vacancy-salary-compensation-type-net" '
-                                                    'class="bloko-header-section-2 '
-                                                    'bloko-header-section-2_lite">от <!-- -->', '').replace('<!-- '
-                                                                                                            '-->',
-                                                                                                            '').replace(
-            '.<span class="vacancy-salary-compensation-type"> на руки</span></span>', '')
-        a = salary_html_code.replace(r'"<span data-qa=\"vacancy-salary-compensation-type-gross\" '
-                                     r'class=\"bloko-header-section-2 bloko-header-section-2_lite\">', '')
-        a = a.replace(r'"<span data-qa=\"vacancy-salary-compensation-type-gross\" class=\"bloko-header-section-2'
-                      r'bloko-header-section-2_lite\">', '').replace(r'<span '
-                                                                     r'class=\"vacancy-salary-compensation-type\"> до вычета налогов</span></span>"',
-                                                                     '')
+        salary = re.findall(r"[\d]{2,}", salary_html_code)
 
-        a = a.replace(r'<span class="vacancy-salary-compensation-type"> на руки</span></span>', '')
-        a = a.replace(r'<span data-qa="vacancy-salary-compensation-type-gross" class="bloko-header-section-2 bloko-header-section-2_lite">от', '')
-        a = a.replace(r'<span class="vacancy-salary-compensation-type"> до вычета налогов</span></span>', '')
-        a = a.replace(r'<span data-qa="vacancy-salary-compensation-type-net" class="bloko-header-section-2 bloko-header-section-2_lite">до', '')
-        a = a.replace(r'<span data-qa="vacancy-salary-compensation-type-gross" class="bloko-header-section-2 bloko-header-section-2_lite">до', '')
-        return a
+        if len(salary) == 2:
+            first_num, second_num = map(unidecode.unidecode, salary)
+            salary = int((first_num + second_num).replace(' ', ''))
+        else:
+            nums = list(map(unidecode.unidecode, salary))
+            first_num, second_num = int((nums[0] + nums[1]).replace(' ', '')), int((nums[2] + nums[3]).replace(' ', ''))
+            salary = (first_num + second_num) // 2
+
+        return salary
+
+    @staticmethod
+    def __convert_experience(experience_string: str):
+        if 'не требуется' in experience_string:
+            return 0
+
+        nums = re.findall('[\d]+', experience_string)
+        if len(nums) == 1:
+            return nums[0]
+
+        else:
+            return (int(nums[0]) + int(nums[1])) // 2
