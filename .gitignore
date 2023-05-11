@@ -131,6 +131,7 @@ venv.bak/
 # Spyder project settings
 .spyderproject
 .spyproject
+vacancies.json
 
 # Rope project settings
 .ropeproject
