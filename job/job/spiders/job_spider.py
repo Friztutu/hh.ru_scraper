@@ -5,11 +5,11 @@ import os
 
 
 class CardUrlSpider(scrapy.Spider):
-    name = 'hh'
     search_job = input("Какую работу ищем: ").strip()
-    start_urls = [f'https://pskov.hh.ru/search/vacancy?area=113&text={search_job}&items_on_page=20']
+    PAGE_ON_SITE = int(input("Сколько страниц будем парсить: "))
+    name = 'hh'
     download_delay = 1
-    PAGE_ON_SITE = 20
+    start_urls = [f'https://pskov.hh.ru/search/vacancy?area=113&text={search_job}&items_on_page=20']
 
     def parse(self, response, **kwargs):
         for link in response.css('h3.bloko-header-section-3 a::attr(href)'):
@@ -31,7 +31,8 @@ class CardUrlSpider(scrapy.Spider):
             'experience': self.__convert_experience(
                 response.css('p.vacancy-description-list-item').css('span::text').get()),
             'salary': self.__convert_salary(
-                response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('div.vacancy-title').css('span.bloko-header-section-2').get()),
+                response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('div.vacancy-title').css(
+                    'span.bloko-header-section-2').get()),
             'employment': response.xpath("/html[@class='desktop']/body[@class=' s-friendly xs-friendly']"
                                          "/div[@id='HH-React-Root']/div/div[@class='HH-MainContent HH-Su"
                                          "pernova-MainContent']/div[@class='main-content']/div[@class='bl"
@@ -55,8 +56,8 @@ class CardUrlSpider(scrapy.Spider):
     @staticmethod
     def __convert_salary(salary_html_code: str):
 
-        if 'з/п не указана' in salary_html_code:
-            return 0
+        if salary_html_code is None or 'з/п не указана' in salary_html_code:
+            return -1
 
         salary = re.findall(r"[\d]{1,}\s[\d]{1,}", salary_html_code)
 
@@ -73,7 +74,7 @@ class CardUrlSpider(scrapy.Spider):
 
     @staticmethod
     def __convert_experience(experience_string: str):
-        if 'не требуется' in experience_string:
+        if experience_string is None or 'не требуется' in experience_string:
             return 0
 
         nums = re.findall('[\d]+', experience_string)
@@ -82,3 +83,4 @@ class CardUrlSpider(scrapy.Spider):
 
         else:
             return (int(nums[0]) + int(nums[1])) // 2
+
