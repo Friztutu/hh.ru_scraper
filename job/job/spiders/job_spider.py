@@ -1,15 +1,15 @@
 import scrapy
 import re
 import unidecode
+import os
 
 
 class CardUrlSpider(scrapy.Spider):
     name = 'hh'
-    search_job = input("Какую работу ищем: ")
+    search_job = input("Какую работу ищем: ").strip()
     start_urls = [f'https://pskov.hh.ru/search/vacancy?area=113&text={search_job}&items_on_page=20']
     download_delay = 1
-    counter = 0
-    PAGE_ON_SITE = 100
+    PAGE_ON_SITE = 20
 
     def parse(self, response, **kwargs):
         for link in response.css('h3.bloko-header-section-3 a::attr(href)'):
@@ -29,9 +29,9 @@ class CardUrlSpider(scrapy.Spider):
             'link': response.url,
             'title': response.css('h1.bloko-header-section-1::text').get(),
             'experience': self.__convert_experience(
-                response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('p').css('span::text').get()),
+                response.css('p.vacancy-description-list-item').css('span::text').get()),
             'salary': self.__convert_salary(
-                response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('div.vacancy-title').get()),
+                response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('div.vacancy-title').css('span.bloko-header-section-2').get()),
             'employment': response.xpath("/html[@class='desktop']/body[@class=' s-friendly xs-friendly']"
                                          "/div[@id='HH-React-Root']/div/div[@class='HH-MainContent HH-Su"
                                          "pernova-MainContent']/div[@class='main-content']/div[@class='bl"
@@ -56,17 +56,18 @@ class CardUrlSpider(scrapy.Spider):
     def __convert_salary(salary_html_code: str):
 
         if 'з/п не указана' in salary_html_code:
-            return None
+            return 0
 
-        salary = re.findall(r"[\d]{2,}", salary_html_code)
+        salary = re.findall(r"[\d]{1,}\s[\d]{1,}", salary_html_code)
 
         if len(salary) == 2:
             first_num, second_num = map(unidecode.unidecode, salary)
-            salary = int((first_num + second_num).replace(' ', ''))
-        else:
-            nums = list(map(unidecode.unidecode, salary))
-            first_num, second_num = int((nums[0] + nums[1]).replace(' ', '')), int((nums[2] + nums[3]).replace(' ', ''))
+            first_num, second_num = int(first_num.replace(' ', '')), int(second_num.replace(' ', ''))
             salary = (first_num + second_num) // 2
+        else:
+            first_num = unidecode.unidecode(salary[0])
+            first_num = int(first_num.replace(' ', ''))
+            salary = first_num
 
         return salary
 

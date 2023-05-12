@@ -133,6 +133,9 @@ venv.bak/
 .spyproject
 vacancies.json
 vacancies_1.json
+analyze.csv
+tests.py
+vacancies.csv
 
 # Rope project settings
 .ropeproject
