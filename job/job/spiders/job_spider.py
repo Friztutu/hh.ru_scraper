@@ -1,7 +1,6 @@
 import scrapy
 import re
 import unidecode
-import os
 
 
 class CardUrlSpider(scrapy.Spider):
@@ -28,29 +27,18 @@ class CardUrlSpider(scrapy.Spider):
         data = {
             'link': response.url,
             'title': response.css('h1.bloko-header-section-1::text').get(),
-            'experience': self.__convert_experience(
+            'experience': self.__convert_experience(experience_string=
                 response.css('p.vacancy-description-list-item').css('span::text').get()),
-            'salary': self.__convert_salary(
+            'salary': self.__convert_salary(salary_html_code=
                 response.css('div.wrapper-flat--H4DVL_qLjKLCo1sytcNI').css('div.vacancy-title').css(
                     'span.bloko-header-section-2').get()),
-            'employment': response.xpath("/html[@class='desktop']/body[@class=' s-friendly xs-friendly']"
-                                         "/div[@id='HH-React-Root']/div/div[@class='HH-MainContent HH-Su"
-                                         "pernova-MainContent']/div[@class='main-content']/div[@class='bl"
-                                         "oko-columns-wrapper']/div[@class='row-content']/div[@class='blo"
-                                         "ko-text bloko-text_large']/div[@class='bloko-columns-row']/div["
-                                         "@class='bloko-column bloko-column_container bloko-column_xs-4 bl"
-                                         "oko-column_s-8 bloko-column_m-12 bloko-column_l-10']/div[@class="
-                                         "'bloko-columns-row'][1]/div[@class='bloko-column bloko-column_xs-"
-                                         "4 bloko-column_s-8 bloko-column_m-12 bloko-column_l-10']/div[@class="
-                                         "'wrapper-flat--H4DVL_qLjKLCo1sytcNI']/p[@class='vacancy-description"
-                                         "-list-item'][2]").extract()[0].replace(
-                '<p class="vacancy-description-list-item" data-qa="vacancy-view-employment-mode">', '').replace(
-                '<!-- -->, <span>', ', ').replace('</span></p>', ''),
-            'town': response.css('div.vacancy-company-redesigned').css('p::text').get(),
+            'employment': self.__convert_employment(response.css('p.vacancy-description-list-item').getall()),
+            'town': self.__convert_town(town=response.css('div.vacancy-company-redesigned').css('p::text').get()),
+            'company': self.__convert_company(response.css('div.vacancy-company-redesigned').css('a.bloko-link').css('span.bloko-header-section-2').css('span').get()),
         }
         if not data['town']:
-            data['town'] = response.css('div.vacancy-company-redesigned').css('a.bloko-link_disable-visited').css(
-                'span::text').get()
+            data['town'] = self.__convert_town(town=response.css('div.vacancy-company-redesigned').css('a.bloko-link_disable-visited').css(
+                'span::text').get())
         yield data
 
     @staticmethod
@@ -84,3 +72,40 @@ class CardUrlSpider(scrapy.Spider):
         else:
             return (int(nums[0]) + int(nums[1])) // 2
 
+    @staticmethod
+    def __convert_town(town):
+        if town is None:
+            return None
+        town = town.split(',')
+        if '(' not in town[0]:
+            return town[0].replace('г. ', '')
+        else:
+            town = town[0].split('(')
+            return town[0].replace('г. ', '')
+
+    @staticmethod
+    def __convert_employment(employment_html_code):
+        if len(employment_html_code) < 2:
+            return
+
+        employment_html_code = employment_html_code[1]
+        result = re.findall('>[\w\s]{1,}', employment_html_code)
+        first_word, second_word = result[0].replace('>', ''), result[1].replace('>', '')
+        return f'{first_word}, {second_word}'
+
+    @staticmethod
+    def __convert_company(company_html_code):
+        if company_html_code is None:
+            return '-1(Не указано)'
+
+        if not re.findall('span', company_html_code):
+            return company_html_code
+
+        if not re.findall('-->', company_html_code):
+            result = re.findall('>.{0,}<', company_html_code)
+            result = result[0].replace('>', '').replace('<', '')
+            return result
+
+        result = re.findall('-->.{0,}</span>', company_html_code)
+        result = result[0].replace('-->', '').replace('</span>', '')
+        return result

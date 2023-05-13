@@ -1,14 +1,17 @@
 import scrapy
 import os
-from data_analyze import main
+from job import data_analyze
 
 
-def start_scraper():
-    filename = input('Видите имя файла: ')
-    os.system(f"scrapy crawl hh -O {filename}.csv")
+class Starter:
 
-    main(filename)
+    @classmethod
+    def start_spider(cls):
+        filename = input("Имя файла: ").strip()
+        os.system(f"scrapy crawl hh -O csv_data/{filename}.csv")
+
+        data_analyze.main(filename)
 
 
 if __name__ == '__main__':
-    start_scraper()
+    Starter.start_spider()
