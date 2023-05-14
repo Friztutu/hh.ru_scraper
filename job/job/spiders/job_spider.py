@@ -66,7 +66,7 @@ class Converter:
             return town[0].replace('г. ', '')
         else:
             town: list[str] = town[0].split('(')
-            return town[0].replace('г. ', '')
+            return town[0].replace('г.', '').replace(' ', '')
 
     @classmethod
     def convert_employment(cls, employment: list[str]) -> Optional[str]:
