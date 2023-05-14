@@ -62,11 +62,11 @@ class Converter:
         if town is None:
             return -1
         town: list[str] = town.split(',')
-        if '(' not in town[0]:
-            return town[0].replace('г. ', '')
-        else:
+
+        if '(' in town[0]:
             town: list[str] = town[0].split('(')
-            return town[0].replace('г.', '').replace(' ', '')
+
+        return town[0].replace('г.', '').replace(' ', '')
 
     @classmethod
     def convert_employment(cls, employment: list[str]) -> Optional[str]:
@@ -116,7 +116,6 @@ class HeadHunterScraper(scrapy.Spider):
     search_job - запрос по которому будет проводится скрапинг
     PAGE_ON_SITE - количество страниц по которому будет проводится парсинг
     name - имя паука, используется для твоего вызова
-    download_delay - Максимальное количество одновременных (то есть одновременных) запросов, которые будут выполняться к любому отдельному IP-адресу
     start_urls - url главной страницы
     converter - конвертер который будет применяться к собранной информации
     """

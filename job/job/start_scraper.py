@@ -4,6 +4,7 @@ from job import data_analyze
 
 class Starter:
     """Класс для старта паука(скрапера)"""
+
     @classmethod
     def start_spider(cls):
         """
