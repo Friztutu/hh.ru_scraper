@@ -15,6 +15,7 @@ Job parser for hh.ru . Writes all vacancies to the database (postgresql) on requ
 
 ## Documentation
 
+
 ## Developers
 
 - [Alex](https://github.com/Friztutu)
