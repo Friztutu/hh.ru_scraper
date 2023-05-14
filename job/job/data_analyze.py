@@ -6,105 +6,107 @@ from datetime import datetime
 import os
 
 
-def create_file(filename):
-    if not os.path.exists('analyze'):
-        os.mkdir('analyze')
+class Analyzer:
 
-    with open('analyze/analyze.txt', mode='w') as file:
-        file.write('Заголовок'.center(200, '-'))
-        file.write('\n\n\n')
-        file.write(f'Отчет по запросу: {filename}, Время оформления: {datetime.today()}\n\n\n')
+    def __init__(self, filename):
+        self.df = dd.read_csv(f'csv_data/{filename}.csv', dtype={'salary': 'float64'})
+        self.writer = Writer(filename)
 
+    def default_info(self):
+        df_with_salary = self.df[self.df.salary != -1]
+        df_with_experience = self.df[self.df.experience != -1]
 
-def create_dataframe(filename):
-    filename = filename + '.csv'
-    df = dd.read_csv(f'csv_data/{filename}', dtype={'salary': 'float64'})
-    return df
+        avg_salary = df_with_salary['salary'].mean().compute()
+        avg_experience = df_with_experience['experience'].mean().compute()
 
+        self.writer.write_title('Общая информация')
+        self.writer.write_default_info(len(self.df), avg_salary, avg_experience)
 
-def analyze_vacancy_town(df):
-    result = df.groupby('town')['salary'].count().compute()
+    def analyze_by_town(self):
+        df = self.df[(self.df.salary != -1) & (self.df.experience != -1) & (self.df.town != 1)]
 
-    with open('analyze/analyze.txt', mode='a') as file:
-        file.write('Вакансии'.center(200, '-') + '\n\n\n')
-        file.write(f'Всего вакансий: {len(df.index)}\n\n')
-        file.write(f'Количество вакансий по регионам: \n\n')
-        for line, town in zip(result, result.index):
-            file.write(f'{town.center(20, " ")}: {float(line):.0f} вакансий\n')
+        title = 'Статистика по городам'
+        table_title = 'Город'.ljust(40, ' ') + 'Вакансий'.ljust(40, ' ') + 'Cредняя з\п'.ljust(40,
+                                                                                               ' ') + 'Средний требуемый опыт'.ljust(
+            40, ' ')
 
-        file.write('\n\n')
+        vacancy_by_town = df.groupby('town')['salary'].count().compute()
+        salary_by_town = df.groupby('town')['salary'].mean().compute()
+        avg_experience_by_town = df.groupby('town')['experience'].mean().compute()
 
+        self.writer.write_title(title)
+        self.writer.write_table(table_title, df_table=(vacancy_by_town, salary_by_town, avg_experience_by_town))
 
-def analyze_salary(df):
-    df_with_salary = df[(df.salary != -1)]
+    def analyze_by_company(self):
+        df = self.df[(self.df.salary != -1) & (self.df.experience != -1) & (self.df.company != 1)]
 
-    avg_salary = df_with_salary['salary'].mean().compute()
-    salary_by_town = df_with_salary.groupby('town')['salary'].mean().compute()
-    salary_by_town.plot(kind='hist')
-    plt.savefig('analyze/График_зарплат.png')
-    with open('analyze/analyze.txt', mode='a') as file:
-        file.write('Зарплата'.center(200, '-') + '\n\n\n')
-        file.write(f'Средняя зарплата всех вакансий: {float(avg_salary):.3f}\n')
-        file.write(f'Вакансии без зарплаты: {len(df.index) - len(df_with_salary.index)}\n\n')
-        file.write(f'Средняя зарплата по городам: \n\n')
-        for line, town in zip(salary_by_town, salary_by_town.index):
-            file.write(f'{town.center(20, " ")}: {float(line):.3f} руб.\n')
+        title = 'Статистика по компаниям'
+        table_title = 'Компания'.ljust(40, ' ') + 'Вакансий'.ljust(40, ' ') + 'Cредняя з\п'.ljust(40,
+                                                                                                  ' ') + 'Средний требуемый опыт'.ljust(
+            40, ' ')
 
-        file.write('\n')
+        vacancy_by_company = df.groupby('company')['salary'].count().compute()
+        salary_by_company = df.groupby('company')['salary'].mean().compute()
+        avg_experience_by_company = df.groupby('company')['experience'].mean().compute()
 
+        self.writer.write_title(title)
+        self.writer.write_table(table_title,
+                                df_table=(vacancy_by_company, salary_by_company, avg_experience_by_company))
 
-def analyze_experience(df):
-    avg_experience = df['experience'].mean().compute()
-    avg_experience_by_town = df.groupby('town')['experience'].mean().compute()
-
-    with open('analyze/analyze.txt', mode='a') as file:
-        file.write('\n' + 'Опыт'.center(200, '-') + '\n\n\n')
-        file.write(f'Средняя требуемый опыт всех вакансий: {float(avg_experience):.3f} лет\n\n')
-        file.write(f'Средняя требуемый опыт по городам:\n\n')
-        for line, town in zip(avg_experience_by_town, avg_experience_by_town.index):
-            file.write(f'{town.center(20, " ")}: {float(line):.3f} года\n')
+    def start(self):
+        self.default_info()
+        self.analyze_by_town()
+        self.analyze_by_company()
 
 
-def analyze_employment(df):
-    result = df.groupby('employment')['employment'].count().compute()
-    with open('analyze/analyze.txt', mode='a') as file:
-        file.write('\n\n' + 'Занятость'.center(200, '-') + '\n\n\n')
-        file.write(f'Статистика по вакансиям: \n\n')
-        for line, town in zip(result, result.index):
-            file.write(f'{town.center(50, " ")}: {line} вакансий\n')
+class Writer:
+
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+
+        if not os.path.exists(f'analyze'):
+            os.mkdir('analyze')
+
+        with open(f'analyze/{self.filename}_analyze.txt', mode='w') as file:
+            file.write('Заголовок'.center(200, '-'))
+            file.write('\n\n\n')
+            file.write(
+                f'Отчет по запросу: {filename}, Время оформления: {datetime.today()}\n\n\n'
+            )
+
+    def write_title(self, title: str) -> None:
+        with open(f'analyze/{self.filename}_analyze.txt', mode='a') as file:
+            file.write(title.center(200, '-'))
+            file.write('\n\n\n')
+
+    def write_default_info(self, len_df, avg_salary, avg_experience):
+        with open(f'analyze/{self.filename}_analyze.txt', mode='a') as file:
+            file.write(f'Количество вакансий в таблице: {len_df}\n')
+            file.write(f'Средняя зарплата по вакансиям: {avg_salary:.3f}\n')
+            file.write(f'Средний опыт: {avg_experience:.3f}\n\n\n')
+
+    def write_table(self, table_title, df_table, extra_info=tuple()):
+        df1, df2, df3 = df_table
+        with open(f'analyze/{self.filename}_analyze.txt', mode='a') as file:
+            for line in extra_info:
+                file.write(line + '\n')
+            file.write(table_title + '\n\n')
+            for index, line1, line2, line3 in zip(df1.index, df1, df2, df3):
+                file.write(
+                    f'{index.ljust(40, " ")}' + f'{float(line1):.1f}'.ljust(40, " ") + f'{float(line2):.3f}'.ljust(40,
+                                                                                                                   " ") + f'{float(line3):.3f}'.ljust(
+                        40, " ") + '\n')
+
+            file.write('\n\n')
 
 
-def analyze_company(df):
-    df_with_company = df[(df.company != '-1(Не указано)') & (df.salary != -1)]
-    result = df_with_company.groupby('company')['salary'].mean().compute()
-
-    with open('analyze/analyze.txt', mode='a') as file:
-        file.write('Компании'.center(200, '-') + '\n\n\n')
-        file.write(f'Всего компаний: {len(result)}\n\n')
-        file.write(f'Средняя з\п по компаниям: \n\n')
-        for line, town in zip(result, result.index):
-            file.write(f'{town.center(50, " ")}: {float(line):.3f} руб.\n')
-
-        file.write('\n\n')
-
-    result = df_with_company.groupby('company')['salary'].count().compute()
-
-    with open('analyze/analyze.txt', mode='a') as file:
-        file.write(f'Количество вакансий по компаниям: \n\n')
-        for line, town in zip(result, result.index):
-            file.write(f'{town.center(50, " ")}: {float(line):.0f} вакансий\n')
-
-        file.write('\n\n')
+class Graphs:
+    pass
 
 
-def main(filename: str):
-    create_file(filename)
-    df = create_dataframe(filename)
-    analyze_vacancy_town(df)
-    analyze_salary(df)
-    analyze_experience(df)
-    analyze_employment(df)
-    analyze_company(df)
+def main(filename):
+    a = Analyzer(filename)
+    a.start()
 
 
 if __name__ == '__main__':
