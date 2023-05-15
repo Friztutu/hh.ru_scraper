@@ -29,7 +29,7 @@ pip install -r requirements.txt
 После этого скрапер готов к использованию.
 
 # Запуск скрапера
-<strong> в папке JobParser/job/ </strong>
+<strong> в папке hh.ru-parser-scraper/job/ </strong>
 
 ```bash
 python3 start_scraper.py
@@ -43,11 +43,11 @@ python3 start_scraper.py
 
 # Хранение данных
 
-Все собранные данные в виде csv таблицы будут хранится в папке JobParser/job/csv_data
+Все собранные данные в виде csv таблицы будут хранится в папке hh.ru-parser-scraper/job/csv_data
 Папка csv_data будет создана автоматически
 
 # Текстовый отчет
-Текстовый отчет будет хранится в папке JobParser/job/<имя файла которое вы ввели>_annalyze/
+Текстовый отчет будет хранится в папке hh.ru-parser-scraper/job/<имя файла которое вы ввели>_annalyze/
 
 Текстовый отчет будет содержать: 
 1. Заголовок(запрос, время создания отчета).
@@ -77,7 +77,7 @@ python3 start_scraper.py
 
       
 # Графики
-Нарисовынные графикки хранятся в папке JobParser/job/<имя файла которое вы ввели>_annalyze/graphs/
+Нарисовынные графикки хранятся в папке hh.ru-parser-scraper/job/<имя файла которое вы ввели>_annalyze/graphs/
 Будут нарисованы графики с распределением зарплаты, и распределением запрлаты от опыта
 
 Пример графика:
@@ -99,6 +99,6 @@ python3 start_scraper.py
 
 ## License
 
-Project JobParser is distributed under the MIT licence
+Project hh.ru-parser-scraper is distributed under the MIT licence
 
 
