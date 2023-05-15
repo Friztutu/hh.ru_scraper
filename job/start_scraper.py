@@ -1,5 +1,5 @@
 import os
-from job import data_analyze
+import data_analyze
 
 
 class Starter:
